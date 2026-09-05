@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="es" class="">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Relieve — estudio de marcas linocut</title>
+
+<!-- Tailwind (CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Configuración de Tailwind: modo oscuro por clase + tipografías
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['"Space Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
+
+<!-- Tipografías -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #15160f;       /* trazo, texto y bordes en modo claro */
+    --paper: #e7e9db;     /* fondo "salvia" del taller */
+    --card: #f6f7ef;      /* superficie de tarjeta en modo claro */
+    --muted: rgba(21,22,15,.55);
+  }
+  html.dark {
+    color-scheme: dark;
+    --ink: #f1f2e6;       /* se invierte: trazo claro sobre fondo oscuro */
+    --paper: #121309;
+    --card: #1c1e15;
+    --muted: rgba(241,242,230,.55);
+  }
+
+  /* Fondo de "papel" con textura muy sutil para el aire de taller de impresión */
+  body {
+    background-color: var(--paper);
+    background-image: radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+  html.dark body {
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  }
+
+  /* Tablero de transparencia (checkerboard) detrás del lienzo */
+  .checker {
+    background-color: #ffffff;
+    background-image:
+      linear-gradient(45deg, #d9d6cd 25%, transparent 25%),
+      linear-gradient(-45deg, #d9d6cd 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #d9d6cd 75%),
+      linear-gradient(-45deg, transparent 75%, #d9d6cd 75%);
+    background-size: 22px 22px;
+    background-position: 0 0, 0 11px, 11px -11px, -11px 0;
+  }
+  html.dark .checker {
+    background-color: #17181e;
+    background-image:
+      linear-gradient(45deg, #24262e 25%, transparent 25%),
+      linear-gradient(-45deg, #24262e 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #24262e 75%),
+      linear-gradient(-45deg, transparent 75%, #24262e 75%);
+  }
+
+  /* Marcas de registro en las esquinas del "lecho de impresión" */
+  .reg::before, .reg::after,
+  .reg > .rt, .reg > .rb {
+    content: ""; position: absolute; width: 16px; height: 16px; pointer-events: none;
+    border-color: currentColor; opacity: .35;
+  }
+  .reg::before { top: 10px; left: 10px; border-left: 2px solid; border-top: 2px solid; }
+  .reg::after  { top: 10px; right: 10px; border-right: 2px solid; border-top: 2px solid; }
+  .reg > .rb   { bottom: 10px; left: 10px; border-left: 2px solid; border-bottom: 2px solid; }
+  .reg > .rt   { bottom: 10px; right: 10px; border-right: 2px solid; border-bottom: 2px solid; }
+
+  /* Sliders planos y monocromos, al estilo panel de control */
+  input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: currentColor; opacity:.2; }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 999px; background: currentColor; opacity:.2; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; margin-top:-7px; width:18px; height:18px; border-radius:999px; background:var(--ink); border:3px solid var(--paper); }
+  input[type=range]::-moz-range-thumb { width:16px; height:16px; border:3px solid var(--paper); border-radius:999px; background:var(--ink); }
+
+  /* Color pickers nativos con marco limpio */
+  input[type=color] { -webkit-appearance:none; appearance:none; border:2px solid var(--ink); padding:0; background:none; cursor:pointer; border-radius:10px; }
+  input[type=color]::-webkit-color-swatch-wrapper { padding:0; }
+  input[type=color]::-webkit-color-swatch { border:none; border-radius:8px; }
+  input[type=color]::-moz-color-swatch { border:none; border-radius:8px; }
+
+  .dragging { outline: 2px dashed var(--ink); outline-offset: -8px; background: rgba(0,0,0,.06); }
+
+  ::selection { background:var(--ink); color:var(--card); }
+</style>
+</head>
+
+<body class="font-sans text-[var(--ink)] antialiased">
+
+  <!-- ============ CABECERA ============ -->
+  <header class="sticky top-0 z-30 border-b-2 border-[var(--ink)] backdrop-blur bg-[var(--paper)]/90">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 h-[72px] flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <!-- Marca: un pequeño "sello" tallado -->
+        <div class="w-10 h-10 rounded-2xl bg-[var(--ink)] flex items-center justify-center shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--card)" aria-hidden="true">
+            <path d="M5 3h9a6 6 0 0 1 0 12H9v6H5V3Zm4 8h5a2 2 0 1 0 0-4H9v4Z"/>
+          </svg>
+        </div>
+        <div class="leading-none">
+          <h1 class="font-display font-bold text-xl tracking-tight">Relieve</h1>
+          <p class="text-[11px] uppercase tracking-[0.12em] text-[var(--muted)] mt-1">Estudio de marcas linocut</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span id="privacyTag" class="hidden sm:inline text-[11px] text-[var(--muted)] mr-1">Todo se procesa en tu equipo</span>
+        <button id="themeBtn" title="Cambiar tema" class="w-10 h-10 rounded-2xl border-2 border-[var(--ink)] flex items-center justify-center hover:bg-[var(--ink)]/8 transition">
+          <svg class="dark:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="hidden dark:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ ESPACIO DE TRABAJO ============ -->
+  <main class="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 items-start">
+
+    <!-- ---- PANEL DE CONTROLES ---- -->
+    <section class="order-2 lg:order-1 flex flex-col gap-5">
+
+      <!-- Zona de carga -->
+      <div id="dropzone" class="rounded-3xl border-2 border-dashed border-[var(--ink)]/35 p-6 text-center transition cursor-pointer hover:border-[var(--ink)] hover:bg-[var(--ink)]/5">
+        <svg class="mx-auto mb-3 text-[var(--ink)]/50" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/></svg>
+        <p class="font-display font-bold text-sm">Arrastra una imagen aquí</p>
+        <p class="text-xs text-[var(--muted)] mt-1">o pégala con <kbd class="px-1 py-0.5 rounded bg-[var(--ink)]/10 font-mono text-[10px]">Ctrl/⌘ V</kbd> · o toca para elegir</p>
+        <p class="text-[10px] text-[var(--muted)] mt-2">PNG · JPG · WebP</p>
+        <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/*" class="hidden" />
+      </div>
+
+      <!-- Ajustes del efecto -->
+      <div id="controls" class="rounded-3xl border-2 border-[var(--ink)] bg-[var(--card)] p-5 flex flex-col gap-5">
+        <h2 class="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-[var(--ink)]/70">Talla</h2>
+
+        <!-- Aleatorizar / Autoajuste IA -->
+        <div class="flex flex-col gap-2">
+          <div class="grid grid-cols-2 gap-2">
+            <button id="randomizeBtn" disabled class="rounded-full border-2 border-[var(--ink)] text-xs font-bold py-2.5 flex items-center justify-center gap-1.5 hover:bg-[var(--ink)]/5 transition disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.6-8.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l.8 1"/><path d="m18 22 4-4-4-4"/><path d="M19.6 18c-1.3 0-2.5-.6-3.3-1.7l-.8-1"/></svg>
+              Aleatorizar
+            </button>
+            <button id="aiRecommendBtn" disabled class="rounded-full bg-[var(--ink)] text-[var(--card)] text-xs font-bold py-2.5 flex items-center justify-center gap-1.5 hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 4.1L6 9l4.1 1.9L12 15l1.9-4.1L18 9l-4.1-1.9L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+              Autoajuste IA
+            </button>
+          </div>
+          <p class="text-[10px] text-[var(--muted)]">El autoajuste analiza el contraste, el detalle y el color de tu imagen en tu propio equipo.</p>
+        </div>
+
+        <!-- Umbral -->
+        <label class="block">
+          <div class="flex justify-between items-baseline mb-2">
+            <span class="text-xs font-medium">Umbral de contraste</span>
+            <span id="thresholdVal" class="text-xs font-mono font-bold">50%</span>
+          </div>
+          <input id="threshold" type="range" min="4" max="96" value="50" class="w-full text-[var(--ink)]" />
+          <p class="text-[10px] text-[var(--muted)] mt-1.5">Cuánta imagen se convierte en tinta.</p>
+        </label>
+
+        <!-- Simplificación -->
+        <label class="block">
+          <div class="flex justify-between items-baseline mb-2">
+            <span class="text-xs font-medium">Simplificación de trazos</span>
+            <span id="detailVal" class="text-xs font-mono font-bold">1</span>
+          </div>
+          <input id="detail" type="range" min="0" max="14" value="1" class="w-full text-[var(--ink)]" />
+          <p class="text-[10px] text-[var(--muted)] mt-1.5">Funde el detalle fino en formas limpias.</p>
+        </label>
+
+        <!-- Bordes tallados -->
+        <label class="block">
+          <div class="flex justify-between items-baseline mb-2">
+            <span class="text-xs font-medium">Bordes tallados</span>
+            <span id="carveVal" class="text-xs font-mono font-bold">22</span>
+          </div>
+          <input id="carve" type="range" min="0" max="100" value="22" class="w-full text-[var(--ink)]" />
+          <p class="text-[10px] text-[var(--muted)] mt-1.5">Rugosidad del filo, como una gubia sobre linóleo.</p>
+        </label>
+
+        <!-- Invertir -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="text-xs font-medium">Invertir tinta y fondo</span>
+          <input id="invert" type="checkbox" class="sr-only peer" />
+          <span class="w-11 h-6 rounded-full border-2 border-[var(--ink)]/30 bg-[var(--card)] peer-checked:bg-[var(--ink)] peer-checked:border-[var(--ink)] relative transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:rounded-full after:bg-[var(--ink)]/40 peer-checked:after:bg-[var(--card)] after:transition peer-checked:after:translate-x-5"></span>
+        </label>
+      </div>
+
+      <!-- Color -->
+      <div class="rounded-3xl border-2 border-[var(--ink)] bg-[var(--card)] p-5 flex flex-col gap-4">
+        <h2 class="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-[var(--ink)]/70">Tinta y papel</h2>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex items-center gap-2">
+            <input id="fgColor" type="color" value="#15160f" class="w-9 h-9 rounded-lg shrink-0" />
+            <div class="leading-tight">
+              <div class="text-xs font-medium">Tinta</div>
+              <div id="fgHex" class="text-[10px] font-mono font-bold text-[var(--muted)]">#15160F</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="bgColor" type="color" value="#e7e9db" class="w-9 h-9 rounded-lg shrink-0" />
+            <div class="leading-tight">
+              <div class="text-xs font-medium">Papel</div>
+              <div id="bgHex" class="text-[10px] font-mono font-bold text-[var(--muted)]">#E7E9DB</div>
+            </div>
+          </div>
+        </div>
+
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="text-xs font-medium">Papel transparente</span>
+          <input id="transparent" type="checkbox" class="sr-only peer" />
+          <span class="w-11 h-6 rounded-full border-2 border-[var(--ink)]/30 bg-[var(--card)] peer-checked:bg-[var(--ink)] peer-checked:border-[var(--ink)] relative transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:rounded-full after:bg-[var(--ink)]/40 peer-checked:after:bg-[var(--card)] after:transition peer-checked:after:translate-x-5"></span>
+        </label>
+
+        <div>
+          <div class="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] mb-2">Paletas</div>
+          <div id="palettes" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <button id="swapColors" class="text-xs font-bold text-[var(--ink)] hover:underline self-start">Intercambiar tinta ↔ papel</button>
+      </div>
+
+      <!-- Marco -->
+      <div class="rounded-3xl border-2 border-[var(--ink)] bg-[var(--card)] p-5 flex flex-col gap-4">
+        <h2 class="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-[var(--ink)]/70">Marco</h2>
+
+        <div class="grid grid-cols-3 gap-2">
+          <button data-shape="none" class="shapeBtn rounded-full text-xs font-bold py-2 border-2 border-[var(--ink)] bg-[var(--ink)] text-[var(--card)] transition">Ninguno</button>
+          <button data-shape="rect" class="shapeBtn rounded-full text-xs font-bold py-2 border-2 border-[var(--ink)]/30 hover:bg-[var(--ink)]/5 transition">Rectángulo</button>
+          <button data-shape="circle" class="shapeBtn rounded-full text-xs font-bold py-2 border-2 border-[var(--ink)]/30 hover:bg-[var(--ink)]/5 transition">Círculo</button>
+        </div>
+
+        <div id="borderControls" class="flex flex-col gap-5 opacity-40 pointer-events-none">
+          <label class="block">
+            <div class="flex justify-between items-baseline mb-2">
+              <span class="text-xs font-medium">Grosor</span>
+              <span id="borderWidthVal" class="text-xs font-mono font-bold">2</span>
+            </div>
+            <input id="borderWidth" type="range" min="1" max="12" value="2" class="w-full text-[var(--ink)]" />
+          </label>
+
+          <label class="block">
+            <div class="flex justify-between items-baseline mb-2">
+              <span class="text-xs font-medium">Separación del filo</span>
+              <span id="borderInsetVal" class="text-xs font-mono font-bold">4</span>
+            </div>
+            <input id="borderInset" type="range" min="0" max="18" value="4" class="w-full text-[var(--ink)]" />
+          </label>
+
+          <label class="block">
+            <div class="flex justify-between items-baseline mb-2">
+              <span class="text-xs font-medium">Redondeo de esquinas</span>
+              <span id="borderRadiusVal" class="text-xs font-mono font-bold">0</span>
+            </div>
+            <input id="borderRadius" type="range" min="0" max="40" value="0" class="w-full text-[var(--ink)]" />
+            <p class="text-[10px] text-[var(--muted)] mt-1.5">Solo afecta al marco rectangular.</p>
+          </label>
+        </div>
+      </div>
+
+      <!-- Exportar -->
+      <div class="rounded-3xl border-2 border-[var(--ink)] bg-[var(--card)] p-5 flex flex-col gap-4">
+        <h2 class="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-[var(--ink)]/70">Exportar</h2>
+
+        <label class="block">
+          <span class="text-xs font-medium">Resolución</span>
+          <select id="size" class="mt-2 w-full rounded-2xl border-2 border-[var(--ink)]/30 bg-transparent px-3 py-2 text-sm">
+            <option value="800">Web — 800 px</option>
+            <option value="1080" selected>Redes sociales — 1080 px</option>
+            <option value="2000">Alta calidad — 2000 px</option>
+            <option value="4000">Impresión — 4000 px</option>
+            <option value="0">Tamaño original</option>
+          </select>
+        </label>
+
+        <div class="grid grid-cols-3 gap-2">
+          <button data-export="png"  class="exportBtn rounded-full bg-[var(--ink)] text-[var(--card)] text-sm font-bold py-2.5 hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed">PNG</button>
+          <button data-export="svg"  class="exportBtn rounded-full border-2 border-[var(--ink)] text-sm font-bold py-2.5 hover:bg-[var(--ink)]/5 transition disabled:opacity-40 disabled:cursor-not-allowed">SVG</button>
+          <button data-export="jpeg" class="exportBtn rounded-full border-2 border-[var(--ink)] text-sm font-bold py-2.5 hover:bg-[var(--ink)]/5 transition disabled:opacity-40 disabled:cursor-not-allowed">JPEG</button>
+        </div>
+        <p class="text-[10px] text-[var(--muted)] leading-relaxed">
+          PNG conserva la transparencia · JPEG usa el color de papel como fondo · SVG traza los contornos como vectores limpios.
+        </p>
+      </div>
+    </section>
+
+    <!-- ---- LECHO DE IMPRESIÓN / VISTA PREVIA ---- -->
+    <section class="order-1 lg:order-2 lg:sticky lg:top-24">
+      <div class="reg relative rounded-3xl border-2 border-[var(--ink)] overflow-hidden">
+        <span class="rt"></span><span class="rb"></span>
+        <div id="stage" class="checker w-full aspect-square sm:aspect-[4/3] lg:aspect-square flex items-center justify-center p-6">
+          <!-- Estado vacío -->
+          <div id="empty" class="text-center max-w-xs">
+            <div class="mx-auto mb-4 w-16 h-16 rounded-2xl border-2 border-[var(--ink)] bg-[var(--ink)]/8 flex items-center justify-center">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L4 21"/></svg>
+            </div>
+            <p class="font-display font-bold text-[var(--ink)]">Empieza con una imagen</p>
+            <p class="text-sm text-[var(--muted)] mt-1">Un retrato, un objeto o una silueta con buen contraste dan las mejores marcas.</p>
+          </div>
+          <!-- Lienzo del resultado -->
+          <canvas id="canvas" class="hidden max-w-full max-h-full w-auto h-auto shadow-[0_1px_0_rgba(0,0,0,0.06)]"></canvas>
+        </div>
+
+        <!-- Barra inferior del lecho -->
+        <div class="flex items-center justify-between px-4 py-2.5 border-t-2 border-[var(--ink)] bg-[var(--card)]">
+          <span id="meta" class="text-[11px] font-mono font-bold text-[var(--muted)]">sin imagen</span>
+          <div class="flex items-center gap-3">
+            <button id="resetBtn" class="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--ink)] transition hidden">Restablecer ajustes</button>
+            <button id="clearBtn" class="text-[11px] font-bold text-[var(--muted)] hover:text-red-500 transition hidden">Quitar imagen</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-[var(--muted)] mt-3 text-center">
+        Consejo: si el resultado sale demasiado ruidoso, sube la simplificación antes que bajar los bordes tallados.
+      </p>
+    </section>
+  </main>
+
+  <!-- Aviso emergente (toast) -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 translate-y-4 opacity-0 pointer-events-none transition-all duration-300 z-50">
+    <div class="rounded-full border-2 border-[var(--ink)] bg-[var(--ink)] text-[var(--card)] text-sm font-bold px-4 py-2.5 shadow-lg"></div>
+  </div>
+
+<script>
+"use strict";
+/* =========================================================================
+   RELIEVE — generador de marcas estilo grabado en linóleo (linocut)
+   Todo el procesamiento ocurre en el cliente con la API de Canvas.
+   Estructura:
+     1) Utilidades          6) Trazado a SVG (marching squares + RDP)
+     2) Tema                7) Vista previa (bucle en tiempo real)
+     3) Estado              8) Exportación (PNG / JPEG / SVG)
+     4) Carga de imagen     9) Cableado de la interfaz
+     5) Motor de imagen
+   ========================================================================= */
+
+/* ---------- 1) Utilidades ---------- */
+const $ = (sel) => document.querySelector(sel);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  const n = h.length === 3
+    ? h.split('').map((c) => c + c).join('')
+    : h;
+  return {
+    r: parseInt(n.slice(0, 2), 16),
+    g: parseInt(n.slice(2, 4), 16),
+    b: parseInt(n.slice(4, 6), 16),
+  };
+}
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  let h = 0, s = 0;
+  if (d !== 0) {
+    s = d / (1 - Math.abs(2 * l - 1));
+    switch (max) {
+      case r: h = 60 * (((g - b) / d) % 6); break;
+      case g: h = 60 * ((b - r) / d + 2); break;
+      default: h = 60 * ((r - g) / d + 4);
+    }
+  }
+  if (h < 0) h += 360;
+  return { h, s: s * 100, l: l * 100 };
+}
+
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+  const R = Math.round((r + m) * 255), G = Math.round((g + m) * 255), B = Math.round((b + m) * 255);
+  return '#' + [R, G, B].map((v) => v.toString(16).padStart(2, '0')).join('');
+}
+
+// Umbral óptimo de Otsu a partir de un histograma de 256 niveles.
+function otsuThreshold(hist, total) {
+  let sum = 0;
+  for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sumB = 0, wB = 0, varMax = 0, threshold = 0;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t];
+    if (wB === 0) continue;
+    const wF = total - wB;
+    if (wF === 0) break;
+    sumB += t * hist[t];
+    const mB = sumB / wB;
+    const mF = (sum - sumB) / wF;
+    const varBetween = wB * wF * (mB - mF) * (mB - mF);
+    if (varBetween > varMax) { varMax = varBetween; threshold = t; }
+  }
+  return threshold;
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const t = $('#toast');
+  t.firstElementChild.textContent = msg;
+  t.classList.remove('translate-y-4', 'opacity-0');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('translate-y-4', 'opacity-0'), 2200);
+}
+
+/* ---------- 2) Tema (claro / oscuro) ---------- */
+(function initTheme() {
+  const stored = localStorage.getItem('relieve-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (stored === 'dark' || (!stored && prefersDark)) {
+    document.documentElement.classList.add('dark');
+  }
+})();
+$('#themeBtn').addEventListener('click', () => {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('relieve-theme', isDark ? 'dark' : 'light');
+});
+
+/* ---------- 3) Estado ---------- */
+const DEFAULTS = {
+  threshold: 50, detail: 1, carve: 22, invert: false, transparent: false,
+  borderShape: 'none', borderWidth: 2, borderInset: 4, borderRadius: 0,
+};
+
+const state = {
+  img: null,          // HTMLImageElement de origen
+  imgW: 0, imgH: 0,
+  threshold: 50,      // 4..96  -> umbral
+  detail: 1,          // 0..14  -> radio de desenfoque (simplificación)
+  carve: 22,          // 0..100 -> amplitud de rugosidad del borde
+  invert: false,
+  transparent: false,
+  fg: '#15160f',
+  bg: '#e7e9db',
+  borderShape: 'none',  // 'none' | 'rect' | 'circle'
+  borderWidth: 2,       // % del lado corto
+  borderInset: 4,       // % del lado corto (separación desde el filo)
+  borderRadius: 0,      // % del lado corto (solo rectángulo)
+};
+
+// Canvas de trabajo (fuera de pantalla) reutilizable
+const work = document.createElement('canvas');
+const wctx = work.getContext('2d', { willReadFrequently: true });
+
+// Caché del campo de ruido: se recalcula solo si cambian dimensiones o semilla
+let noiseCache = { w: 0, h: 0, seed: 0, data: null };
+
+/* ---------- 4) Carga de imagen ---------- */
+function loadImageFromSource(src) {
+  const img = new Image();
+  img.onload = () => {
+    state.img = img;
+    state.imgW = img.naturalWidth;
+    state.imgH = img.naturalHeight;
+    noiseCache.data = null; // fuerza recálculo del ruido
+    $('#empty').classList.add('hidden');
+    $('#canvas').classList.remove('hidden');
+    document.querySelectorAll('.exportBtn').forEach((b) => (b.disabled = false));
+    $('#clearBtn').classList.remove('hidden');
+    $('#resetBtn').classList.remove('hidden');
+    $('#randomizeBtn').disabled = false;
+    $('#aiRecommendBtn').disabled = false;
+    render();
+    toast('Imagen cargada');
+  };
+  img.onerror = () => toast('No se pudo leer esa imagen');
+  img.src = src;
+}
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    toast('Ese archivo no es una imagen');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => loadImageFromSource(e.target.result);
+  reader.readAsDataURL(file);
+}
+
+// Input de archivo
+$('#fileInput').addEventListener('change', (e) => {
+  if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+});
+// Clic en la zona de carga
+$('#dropzone').addEventListener('click', () => $('#fileInput').click());
+
+// Arrastrar y soltar (sobre toda la ventana)
+['dragenter', 'dragover'].forEach((ev) =>
+  window.addEventListener(ev, (e) => {
+    e.preventDefault();
+    $('#dropzone').classList.add('dragging');
+  })
+);
+['dragleave', 'drop'].forEach((ev) =>
+  window.addEventListener(ev, (e) => {
+    e.preventDefault();
+    if (ev === 'drop' || e.target === document.documentElement) {
+      $('#dropzone').classList.remove('dragging');
+    }
+  })
+);
+window.addEventListener('drop', (e) => {
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+
+// Pegar desde el portapapeles (Ctrl/Cmd + V)
+window.addEventListener('paste', (e) => {
+  const items = (e.clipboardData && e.clipboardData.items) || [];
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      handleFile(item.getAsFile());
+      return;
+    }
+  }
+});
+
+/* ---------- 5) Motor de imagen ---------- */
+
+// Desenfoque de caja separable (rápido). Suaviza el detalle antes de umbralizar.
+function boxBlur(src, w, h, r, passes) {
+  if (r <= 0) return Float32Array.from(src);
+  let a = Float32Array.from(src);
+  let tmp = new Float32Array(w * h);
+  const div = 2 * r + 1;
+  for (let p = 0; p < passes; p++) {
+    // Horizontal
+    for (let y = 0; y < h; y++) {
+      const off = y * w;
+      let sum = 0;
+      for (let x = -r; x <= r; x++) sum += a[off + clamp(x, 0, w - 1)];
+      for (let x = 0; x < w; x++) {
+        tmp[off + x] = sum / div;
+        sum += a[off + clamp(x + r + 1, 0, w - 1)] - a[off + clamp(x - r, 0, w - 1)];
+      }
+    }
+    // Vertical
+    for (let x = 0; x < w; x++) {
+      let sum = 0;
+      for (let y = -r; y <= r; y++) sum += tmp[clamp(y, 0, h - 1) * w + x];
+      for (let y = 0; y < h; y++) {
+        a[y * w + x] = sum / div;
+        sum += tmp[clamp(y + r + 1, 0, h - 1) * w + x] - tmp[clamp(y - r, 0, h - 1) * w + x];
+      }
+    }
+  }
+  return a;
+}
+
+// Ruido de valor (2 octavas) para tallar el borde con aire orgánico.
+function valueNoise(w, h, cell, seed) {
+  const gw = Math.ceil(w / cell) + 2;
+  const gh = Math.ceil(h / cell) + 2;
+  const grid = new Float32Array(gw * gh);
+  let s = seed >>> 0;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < grid.length; i++) grid[i] = rnd();
+
+  const out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const gy = y / cell, iy = Math.floor(gy), fy = gy - iy;
+    const uy = fy * fy * (3 - 2 * fy);
+    for (let x = 0; x < w; x++) {
+      const gx = x / cell, ix = Math.floor(gx), fx = gx - ix;
+      const ux = fx * fx * (3 - 2 * fx);
+      const a = grid[iy * gw + ix], b = grid[iy * gw + ix + 1];
+      const c = grid[(iy + 1) * gw + ix], d = grid[(iy + 1) * gw + ix + 1];
+      const top = a + (b - a) * ux;
+      const bot = c + (d - c) * ux;
+      out[y * w + x] = top + (bot - top) * uy;
+    }
+  }
+  return out;
+}
+
+function getNoise(w, h) {
+  if (noiseCache.data && noiseCache.w === w && noiseCache.h === h) return noiseCache.data;
+  const seed = 1337;
+  const long = Math.max(w, h);
+  const fine = valueNoise(w, h, Math.max(2, long / 55), seed);
+  const coarse = valueNoise(w, h, Math.max(4, long / 16), seed + 99);
+  const out = new Float32Array(w * h);
+  for (let i = 0; i < out.length; i++) out[i] = 0.6 * fine[i] + 0.4 * coarse[i]; // ~[0,1]
+  noiseCache = { w, h, seed, data: out };
+  return out;
+}
+
+/**
+ * Produce una máscara binaria (Uint8Array 0/1) a la resolución pedida.
+ * 1 = tinta (foreground), 0 = papel.
+ */
+function buildMask(procW, procH) {
+  work.width = procW;
+  work.height = procH;
+  wctx.clearRect(0, 0, procW, procH);
+  wctx.drawImage(state.img, 0, 0, procW, procH);
+  const px = wctx.getImageData(0, 0, procW, procH).data;
+
+  // Luminancia perceptual. Los píxeles transparentes cuentan como "papel".
+  const n = procW * procH;
+  const lum = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const j = i * 4;
+    const alpha = px[j + 3] / 255;
+    const l = 0.299 * px[j] + 0.587 * px[j + 1] + 0.114 * px[j + 2];
+    lum[i] = l * alpha + 255 * (1 - alpha); // fondo transparente -> blanco
+  }
+
+  // Simplificación: desenfoque previo controlado por el slider.
+  const blurred = boxBlur(lum, procW, procH, state.detail | 0, 2);
+
+  // Rugosidad del borde: se perturba el umbral con ruido.
+  const amp = (state.carve / 100) * 0.45;
+  const noise = amp > 0 ? getNoise(procW, procH) : null;
+  const thr = state.threshold / 100;
+
+  const mask = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    let v = blurred[i] / 255;
+    if (noise) v += (noise[i] * 2 - 1) * amp;
+    // Lo oscuro se vuelve tinta por defecto.
+    let ink = v < thr;
+    if (state.invert) ink = !ink;
+    mask[i] = ink ? 1 : 0;
+  }
+  return mask;
+}
+
+// Rectángulo con esquinas redondeadas (compatibilidad amplia sin ctx.roundRect).
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Marco decorativo. Se imprime en la tinta actual, como un sello a una tinta.
+// Las medidas son relativas al lado corto para escalar igual en cualquier tamaño.
+function drawBorder(ctx, w, h) {
+  if (state.borderShape === 'none') return;
+  const m = Math.min(w, h);
+  const lw = (state.borderWidth / 100) * m;
+  if (lw <= 0) return;
+  const inset = (state.borderInset / 100) * m + lw / 2; // el trazo va centrado
+  ctx.save();
+  ctx.strokeStyle = state.fg;
+  ctx.lineWidth = lw;
+  ctx.lineJoin = 'round';
+  if (state.borderShape === 'circle') {
+    ctx.beginPath();
+    ctx.ellipse(w / 2, h / 2, Math.max(1, w / 2 - inset), Math.max(1, h / 2 - inset), 0, 0, Math.PI * 2);
+    ctx.stroke();
+  } else {
+    const rw = Math.max(1, w - inset * 2);
+    const rh = Math.max(1, h - inset * 2);
+    roundRect(ctx, inset, inset, rw, rh, (state.borderRadius / 100) * m);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Pinta una máscara binaria sobre un canvas destino con los colores actuales.
+function paintMask(mask, w, h, targetCanvas, forceSolidBg) {
+  targetCanvas.width = w;
+  targetCanvas.height = h;
+  const ctx = targetCanvas.getContext('2d');
+  const out = ctx.createImageData(w, h);
+  const d = out.data;
+  const fg = hexToRgb(state.fg);
+  const bg = hexToRgb(state.bg);
+  const transparentBg = state.transparent && !forceSolidBg;
+
+  for (let i = 0; i < mask.length; i++) {
+    const j = i * 4;
+    if (mask[i]) {
+      d[j] = fg.r; d[j + 1] = fg.g; d[j + 2] = fg.b; d[j + 3] = 255;
+    } else if (transparentBg) {
+      d[j + 3] = 0;
+    } else {
+      d[j] = bg.r; d[j + 1] = bg.g; d[j + 2] = bg.b; d[j + 3] = 255;
+    }
+  }
+  ctx.putImageData(out, 0, 0);
+  drawBorder(ctx, w, h); // el marco se traza encima del resultado
+}
+
+// Calcula dimensiones de proceso preservando el aspecto, con tope de lado largo.
+function fitDims(maxLong) {
+  const { imgW, imgH } = state;
+  const long = Math.max(imgW, imgH);
+  const scale = maxLong > 0 ? Math.min(1, maxLong / long) : 1;
+  return {
+    w: Math.max(1, Math.round(imgW * scale)),
+    h: Math.max(1, Math.round(imgH * scale)),
+  };
+}
+
+/* ---------- 6) Trazado a SVG (marching squares + simplificación) ---------- */
+
+// Extrae contornos de una máscara binaria como bucles de puntos.
+function traceContours(mask, w, h) {
+  const W = w + 2, H = h + 2; // borde de relleno para cerrar formas al ras
+  const g = (x, y) => (x < 1 || y < 1 || x > w || y > h ? 0 : mask[(y - 1) * w + (x - 1)]);
+  const segs = [];
+  const seg = (ax, ay, bx, by) => segs.push([ax, ay, bx, by]);
+
+  for (let y = 0; y < H - 1; y++) {
+    for (let x = 0; x < W - 1; x++) {
+      const tl = g(x, y), tr = g(x + 1, y), br = g(x + 1, y + 1), bl = g(x, y + 1);
+      const c = (tl << 3) | (tr << 2) | (br << 1) | bl;
+      if (c === 0 || c === 15) continue;
+      const T = [x + 0.5, y], R = [x + 1, y + 0.5], B = [x + 0.5, y + 1], L = [x, y + 0.5];
+      switch (c) {
+        case 1:  seg(L[0], L[1], B[0], B[1]); break;
+        case 2:  seg(B[0], B[1], R[0], R[1]); break;
+        case 3:  seg(L[0], L[1], R[0], R[1]); break;
+        case 4:  seg(T[0], T[1], R[0], R[1]); break;
+        case 5:  seg(T[0], T[1], R[0], R[1]); seg(B[0], B[1], L[0], L[1]); break;
+        case 6:  seg(T[0], T[1], B[0], B[1]); break;
+        case 7:  seg(L[0], L[1], T[0], T[1]); break;
+        case 8:  seg(T[0], T[1], L[0], L[1]); break;
+        case 9:  seg(T[0], T[1], B[0], B[1]); break;
+        case 10: seg(T[0], T[1], L[0], L[1]); seg(B[0], B[1], R[0], R[1]); break;
+        case 11: seg(T[0], T[1], R[0], R[1]); break;
+        case 12: seg(L[0], L[1], R[0], R[1]); break;
+        case 13: seg(B[0], B[1], R[0], R[1]); break;
+        case 14: seg(L[0], L[1], B[0], B[1]); break;
+      }
+    }
+  }
+
+  // Cose los segmentos en bucles cerrados uniendo extremos coincidentes.
+  const key = (x, y) => Math.round(x * 2) + ',' + Math.round(y * 2);
+  const map = new Map();
+  const add = (k, i) => { let a = map.get(k); if (!a) { a = []; map.set(k, a); } a.push(i); };
+  segs.forEach((s, i) => { add(key(s[0], s[1]), i); add(key(s[2], s[3]), i); });
+
+  const used = new Array(segs.length).fill(false);
+  const loops = [];
+  for (let i = 0; i < segs.length; i++) {
+    if (used[i]) continue;
+    used[i] = true;
+    const s0 = segs[i];
+    const px = s0[0], py = s0[1];
+    let cx = s0[2], cy = s0[3];
+    const loop = [[px, py], [cx, cy]];
+    let guard = 0;
+    while (guard++ < segs.length * 4) {
+      const cand = map.get(key(cx, cy)) || [];
+      let nxt = -1;
+      for (const si of cand) { if (!used[si]) { nxt = si; break; } }
+      if (nxt < 0) break;
+      used[nxt] = true;
+      const s = segs[nxt];
+      if (key(s[0], s[1]) === key(cx, cy)) { cx = s[2]; cy = s[3]; }
+      else { cx = s[0]; cy = s[1]; }
+      loop.push([cx, cy]);
+      if (key(cx, cy) === key(px, py)) break; // cerrado
+    }
+    if (loop.length > 3) loops.push(loop);
+  }
+  return loops;
+}
+
+// Simplificación Ramer–Douglas–Peucker para aligerar cada contorno.
+function rdp(points, eps) {
+  if (points.length < 3) return points;
+  let dmax = 0, idx = 0;
+  const a = points[0], b = points[points.length - 1];
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy || 1e-9;
+  for (let i = 1; i < points.length - 1; i++) {
+    const p = points[i];
+    const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2;
+    const projX = a[0] + t * dx, projY = a[1] + t * dy;
+    const d = (p[0] - projX) ** 2 + (p[1] - projY) ** 2;
+    if (d > dmax) { dmax = d; idx = i; }
+  }
+  if (dmax > eps * eps) {
+    const left = rdp(points.slice(0, idx + 1), eps);
+    const right = rdp(points.slice(idx), eps);
+    return left.slice(0, -1).concat(right);
+  }
+  return [a, b];
+}
+
+function buildSVG(procW, procH, outW, outH) {
+  const mask = buildMask(procW, procH);
+  const loops = traceContours(mask, procW, procH);
+  const sx = outW / procW, sy = outH / procH;
+  const eps = 0.9; // en unidades de la rejilla de proceso
+
+  let d = '';
+  for (let loop of loops) {
+    const simplified = rdp(loop, eps);
+    if (simplified.length < 3) continue;
+    for (let k = 0; k < simplified.length; k++) {
+      // (gx-1) descuenta el borde de relleno; luego se escala a la salida.
+      const X = ((simplified[k][0] - 1) * sx).toFixed(1);
+      const Y = ((simplified[k][1] - 1) * sy).toFixed(1);
+      d += (k === 0 ? 'M' : 'L') + X + ' ' + Y + ' ';
+    }
+    d += 'Z ';
+  }
+
+  const bgRect = state.transparent
+    ? ''
+    : `<rect width="${outW}" height="${outH}" fill="${state.bg}"/>`;
+
+  // Marco como vector (mismas proporciones que en el lienzo).
+  let borderEl = '';
+  if (state.borderShape !== 'none') {
+    const m = Math.min(outW, outH);
+    const lw = (state.borderWidth / 100) * m;
+    if (lw > 0) {
+      const inset = (state.borderInset / 100) * m + lw / 2;
+      if (state.borderShape === 'circle') {
+        borderEl = `<ellipse cx="${(outW / 2).toFixed(1)}" cy="${(outH / 2).toFixed(1)}" rx="${Math.max(1, outW / 2 - inset).toFixed(1)}" ry="${Math.max(1, outH / 2 - inset).toFixed(1)}" fill="none" stroke="${state.fg}" stroke-width="${lw.toFixed(1)}"/>`;
+      } else {
+        const r = clamp((state.borderRadius / 100) * m, 0, Math.min(outW, outH) / 2);
+        borderEl = `<rect x="${inset.toFixed(1)}" y="${inset.toFixed(1)}" width="${Math.max(1, outW - inset * 2).toFixed(1)}" height="${Math.max(1, outH - inset * 2).toFixed(1)}" rx="${r.toFixed(1)}" fill="none" stroke="${state.fg}" stroke-width="${lw.toFixed(1)}"/>`;
+      }
+    }
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${outW}" height="${outH}" viewBox="0 0 ${outW} ${outH}">${bgRect}<path d="${d.trim()}" fill="${state.fg}" fill-rule="evenodd"/>${borderEl}</svg>`;
+}
+
+/* ---------- 7) Vista previa en tiempo real ---------- */
+let rafId = null;
+function render() {
+  if (!state.img) return;
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(() => {
+    // Resolución de proceso para la vista previa (fluida, con tope).
+    const { w, h } = fitDims(1000);
+    const mask = buildMask(w, h);
+    paintMask(mask, w, h, $('#canvas'), false);
+    $('#meta').textContent = `${state.imgW}×${state.imgH} px · vista ${w}×${h}`;
+  });
+}
+
+/* ---------- 8) Exportación ---------- */
+function download(blobOrUrl, filename) {
+  const a = document.createElement('a');
+  a.href = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  if (typeof blobOrUrl !== 'string') setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+function exportAs(kind) {
+  if (!state.img) return;
+  const maxLong = parseInt($('#size').value, 10);
+  const { w: outW, h: outH } = fitDims(maxLong);
+  const stamp = Date.now().toString(36);
+
+  if (kind === 'svg') {
+    // El trazado se hace a resolución moderada; el SVG es escalable.
+    const trace = fitDims(Math.min(maxLong || 4000, 1400));
+    const svg = buildSVG(trace.w, trace.h, outW, outH);
+    download(new Blob([svg], { type: 'image/svg+xml' }), `relieve-${stamp}.svg`);
+    toast('SVG exportado');
+    return;
+  }
+
+  // Raster (PNG / JPEG): se reprocesa a la resolución de salida para máxima nitidez.
+  const mask = buildMask(outW, outH);
+  const out = document.createElement('canvas');
+  paintMask(mask, outW, outH, out, kind === 'jpeg'); // JPEG siempre con papel sólido
+  const type = kind === 'jpeg' ? 'image/jpeg' : 'image/png';
+  out.toBlob((blob) => {
+    download(blob, `relieve-${stamp}.${kind === 'jpeg' ? 'jpg' : 'png'}`);
+    toast(kind.toUpperCase() + ' exportado');
+  }, type, 0.92);
+}
+
+document.querySelectorAll('.exportBtn').forEach((btn) =>
+  btn.addEventListener('click', () => exportAs(btn.dataset.export))
+);
+
+/* ---------- 9) Cableado de la interfaz ---------- */
+
+// Sliders
+function bindSlider(id, key, fmt) {
+  const el = $('#' + id);
+  const val = $('#' + id + 'Val');
+  el.addEventListener('input', () => {
+    state[key] = parseInt(el.value, 10);
+    if (val) val.textContent = fmt ? fmt(el.value) : el.value;
+    render();
+  });
+}
+bindSlider('threshold', 'threshold', (v) => v + '%');
+bindSlider('detail', 'detail');
+bindSlider('carve', 'carve');
+bindSlider('borderWidth', 'borderWidth');
+bindSlider('borderInset', 'borderInset');
+bindSlider('borderRadius', 'borderRadius');
+
+// Forma del marco (control segmentado)
+const shapeBtns = document.querySelectorAll('.shapeBtn');
+function setShape(shape) {
+  state.borderShape = shape;
+  shapeBtns.forEach((b) => {
+    const on = b.dataset.shape === shape;
+    b.classList.toggle('bg-[var(--ink)]', on);
+    b.classList.toggle('text-[var(--card)]', on);
+    b.classList.toggle('border-[var(--ink)]', on);
+    b.classList.toggle('border-[var(--ink)]/30', !on);
+  });
+  const off = shape === 'none';
+  const bc = $('#borderControls');
+  bc.classList.toggle('opacity-40', off);
+  bc.classList.toggle('pointer-events-none', off);
+  render();
+}
+shapeBtns.forEach((b) => b.addEventListener('click', () => setShape(b.dataset.shape)));
+
+// Sincroniza todos los controles visibles con el estado actual (y renderiza).
+function syncUIFromState() {
+  $('#threshold').value = state.threshold; $('#thresholdVal').textContent = state.threshold + '%';
+  $('#detail').value = state.detail; $('#detailVal').textContent = state.detail;
+  $('#carve').value = state.carve; $('#carveVal').textContent = state.carve;
+  $('#invert').checked = state.invert;
+  $('#transparent').checked = state.transparent;
+  setFg(state.fg);
+  setBg(state.bg);
+  $('#bgColor').disabled = state.transparent;
+  $('#borderWidth').value = state.borderWidth; $('#borderWidthVal').textContent = state.borderWidth;
+  $('#borderInset').value = state.borderInset; $('#borderInsetVal').textContent = state.borderInset;
+  $('#borderRadius').value = state.borderRadius; $('#borderRadiusVal').textContent = state.borderRadius;
+  setShape(state.borderShape); // también dispara render()
+}
+
+/* ---------- 9b) Aleatorizar ---------- */
+function randomize() {
+  if (!state.img) return;
+  const randInt = (a, b) => Math.round(a + Math.random() * (b - a));
+
+  state.threshold = randInt(15, 85);
+  state.detail = randInt(0, 10);
+  state.carve = randInt(0, 80);
+  state.invert = Math.random() < 0.35;
+
+  if (Math.random() < 0.6) {
+    const p = PALETTES[randInt(0, PALETTES.length - 1)];
+    state.fg = p.fg; state.bg = p.bg;
+  } else {
+    const hue = randInt(0, 359);
+    state.fg = hslToHex(hue, randInt(55, 90), randInt(8, 22));
+    state.bg = hslToHex((hue + (Math.random() < 0.5 ? 0 : 180)) % 360, randInt(5, 20), randInt(88, 97));
+  }
+  state.transparent = false;
+
+  const shapes = ['none', 'none', 'rect', 'circle']; // más peso a "ninguno"
+  state.borderShape = shapes[randInt(0, shapes.length - 1)];
+  if (state.borderShape !== 'none') {
+    state.borderWidth = randInt(1, 8);
+    state.borderInset = randInt(0, 14);
+    state.borderRadius = randInt(0, 30);
+  }
+
+  syncUIFromState();
+  toast('Ajustes aleatorios aplicados');
+}
+$('#randomizeBtn').addEventListener('click', randomize);
+
+/* ---------- 9c) Autoajuste con IA (análisis local de la imagen) ---------- */
+function aiRecommend() {
+  if (!state.img) return;
+
+  // Analiza una versión reducida de la imagen: rápido y suficiente para decidir.
+  const dim = fitDims(220);
+  work.width = dim.w; work.height = dim.h;
+  wctx.clearRect(0, 0, dim.w, dim.h);
+  wctx.drawImage(state.img, 0, 0, dim.w, dim.h);
+  const px = wctx.getImageData(0, 0, dim.w, dim.h).data;
+  const n = dim.w * dim.h;
+
+  const lum = new Float32Array(n);
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < n; i++) {
+    const j = i * 4;
+    const alpha = px[j + 3] / 255;
+    const l = 0.299 * px[j] + 0.587 * px[j + 1] + 0.114 * px[j + 2];
+    const v = l * alpha + 255 * (1 - alpha);
+    lum[i] = v;
+    hist[clamp(Math.round(v), 0, 255)]++;
+  }
+  const otsuT = otsuThreshold(hist, n);
+
+  // Densidad de bordes: cuánto detalle fino hay que simplificar.
+  let edgeSum = 0, edgeCount = 0;
+  for (let y = 0; y < dim.h; y++) {
+    for (let x = 0; x < dim.w - 1; x++) {
+      const i = y * dim.w + x;
+      edgeSum += Math.abs(lum[i] - lum[i + 1]); edgeCount++;
+    }
+  }
+  for (let y = 0; y < dim.h - 1; y++) {
+    for (let x = 0; x < dim.w; x++) {
+      const i = y * dim.w + x;
+      edgeSum += Math.abs(lum[i] - lum[i + dim.w]); edgeCount++;
+    }
+  }
+  const edgeScore = edgeSum / edgeCount;
+
+  // Elige la dirección (normal o invertida) que da una proporción de tinta más equilibrada.
+  let darkCount = 0;
+  for (let i = 0; i < n; i++) if (lum[i] < otsuT) darkCount++;
+  const ratioNormal = darkCount / n;
+  const ratioInverted = 1 - ratioNormal;
+  const invert = Math.abs(ratioInverted - 0.4) < Math.abs(ratioNormal - 0.4);
+  const inkRatio = invert ? ratioInverted : ratioNormal;
+
+  // Color medio de las zonas de tinta y de papel, para sugerir una paleta fiel a la foto.
+  let fr = 0, fgb = 0, fb = 0, fcount = 0, br = 0, bgg = 0, bb = 0, bcount = 0;
+  for (let i = 0; i < n; i++) {
+    const j = i * 4;
+    const isDark = lum[i] < otsuT;
+    const isInk = invert ? !isDark : isDark;
+    if (isInk) { fr += px[j]; fgb += px[j + 1]; fb += px[j + 2]; fcount++; }
+    else { br += px[j]; bgg += px[j + 1]; bb += px[j + 2]; bcount++; }
+  }
+  fcount = fcount || 1; bcount = bcount || 1;
+  const fgHsl = rgbToHsl(fr / fcount, fgb / fcount, fb / fcount);
+  const bgHsl = rgbToHsl(br / bcount, bgg / bcount, bb / bcount);
+
+  state.fg = hslToHex(fgHsl.h, clamp(fgHsl.s < 25 ? 45 : fgHsl.s, 35, 90), clamp(fgHsl.l, 6, 22));
+  state.bg = hslToHex(bgHsl.h, clamp(bgHsl.s, 4, 18), clamp(bgHsl.l, 90, 97));
+  state.transparent = false;
+  state.threshold = clamp(Math.round((otsuT / 255) * 100), 4, 96);
+  state.detail = clamp(Math.round(edgeScore / 3), 0, 12);
+  state.carve = clamp(Math.round(30 - Math.abs(inkRatio - 0.4) * 70), 6, 45);
+  state.invert = invert;
+
+  syncUIFromState();
+  toast('IA sugirió nuevos ajustes según tu imagen');
+}
+$('#aiRecommendBtn').addEventListener('click', aiRecommend);
+
+// Interruptores
+$('#invert').addEventListener('change', (e) => { state.invert = e.target.checked; render(); });
+$('#transparent').addEventListener('change', (e) => {
+  state.transparent = e.target.checked;
+  $('#bgColor').disabled = e.target.checked;
+  render();
+});
+
+// Colores
+function setFg(hex) { state.fg = hex; $('#fgColor').value = hex; $('#fgHex').textContent = hex.toUpperCase(); }
+function setBg(hex) { state.bg = hex; $('#bgColor').value = hex; $('#bgHex').textContent = hex.toUpperCase(); }
+$('#fgColor').addEventListener('input', (e) => { setFg(e.target.value); render(); });
+$('#bgColor').addEventListener('input', (e) => { setBg(e.target.value); render(); });
+$('#swapColors').addEventListener('click', () => {
+  const f = state.fg; setFg(state.bg); setBg(f); render();
+});
+
+// Paletas predefinidas (inspiradas en las referencias)
+const PALETTES = [
+  { name: 'Tinta / papel', fg: '#15160f', bg: '#e7e9db' },
+  { name: 'Bermellón',     fg: '#f5340a', bg: '#fbdfe0' },
+  { name: 'Negro / limón', fg: '#0a0a0a', bg: '#f5e000' },
+  { name: 'Grafito',       fg: '#141414', bg: '#ffffff' },
+  { name: 'Ultramar',      fg: '#3b4fd6', bg: '#ffffff' },
+  { name: 'Bosque',        fg: '#0e5c3a', bg: '#eef3ea' },
+];
+const palWrap = $('#palettes');
+PALETTES.forEach((p) => {
+  const b = document.createElement('button');
+  b.title = p.name;
+  b.className = 'w-9 h-9 rounded-lg overflow-hidden border-2 border-[var(--ink)]/25 relative hover:scale-105 transition';
+  b.innerHTML = `<span style="background:${p.bg}" class="absolute inset-0"></span>
+                 <span style="background:${p.fg}" class="absolute inset-0 [clip-path:polygon(0_0,100%_0,0_100%)]"></span>`;
+  b.addEventListener('click', () => {
+    setFg(p.fg); setBg(p.bg);
+    state.transparent = false;
+    $('#transparent').checked = false;
+    $('#bgColor').disabled = false;
+    render();
+  });
+  palWrap.appendChild(b);
+});
+
+// Tamaño de exportación (solo afecta la exportación, no la vista)
+$('#size').addEventListener('change', () => {});
+
+// Quitar imagen / restablecer
+$('#clearBtn').addEventListener('click', () => {
+  state.img = null;
+  $('#canvas').classList.add('hidden');
+  $('#empty').classList.remove('hidden');
+  $('#clearBtn').classList.add('hidden');
+  $('#resetBtn').classList.add('hidden');
+  $('#meta').textContent = 'sin imagen';
+  $('#fileInput').value = '';
+  document.querySelectorAll('.exportBtn').forEach((b) => (b.disabled = true));
+  $('#randomizeBtn').disabled = true;
+  $('#aiRecommendBtn').disabled = true;
+});
+
+$('#resetBtn').addEventListener('click', () => {
+  Object.assign(state, DEFAULTS);
+  syncUIFromState();
+  toast('Ajustes restablecidos');
+});
+
+// Estado inicial: exportación deshabilitada hasta cargar imagen
+document.querySelectorAll('.exportBtn').forEach((b) => (b.disabled = true));
+</script>
+</body>
+</html>
